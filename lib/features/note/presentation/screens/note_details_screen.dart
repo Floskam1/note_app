@@ -15,12 +15,6 @@ class _NoteDetailsScreenState extends State<NoteDetailsScreen> {
   final QuillController _controller = QuillController.basic();
 
   @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.primaryColor,
@@ -82,9 +76,16 @@ class _NoteDetailsScreenState extends State<NoteDetailsScreen> {
               ),
             ),
           ),
-          SizedBox(
+          Container(
             height: 50,
             width: double.infinity,
+            color: Colors.red,
+            child: Expanded(
+              child: QuillEditor.basic(
+                controller: _controller,
+                config: const QuillEditorConfig(),
+              ),
+            ),
           ),
         ],
       ),

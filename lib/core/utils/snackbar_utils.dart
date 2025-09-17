@@ -6,4 +6,13 @@ class SnackBarUtils {
       SnackBar(content: Text(message)),
     );
   }
+
+  static void showErrorSnackBar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red, // Or any error specific color
+      ),
+    );
+  }
 }
