@@ -4,6 +4,7 @@ import 'package:note_app/core/middlewares/auth_middleware.dart';
 import 'package:note_app/features/authentication/presentation/screens/forgot_password_screen.dart';
 import 'package:note_app/features/authentication/presentation/screens/sign_in_screen.dart';
 import 'package:note_app/features/authentication/presentation/screens/sign_up_screen.dart';
+import 'package:note_app/features/note/presentation/screens/note_details_screen.dart';
 import 'package:note_app/features/note/presentation/screens/notes_screen.dart';
 
 class AppRouter {
@@ -11,6 +12,7 @@ class AppRouter {
   static const String signIn = "sign-in";
   static const String forgotPassword = "forgot-password";
   static const String notes = "notes";
+  static const String noteDetails = "note-details";
 
   GoRouter get routerConfig => GoRouter(
     initialLocation: "/",
@@ -24,6 +26,13 @@ class AppRouter {
       GoRoute(
         name: notes,
         path: "/notes",
+        routes: [
+          GoRoute(
+            name: noteDetails,
+            path: "/note-details",
+            builder: (context, state) => const NoteDetailsScreen(),
+          ),
+        ],
         builder: (context, state) => const NotesScreen(),
       ),
       GoRoute(

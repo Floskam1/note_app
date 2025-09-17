@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:note_app/core/router/app_router.dart';
 import 'package:note_app/core/theme/app_theme.dart';
 import 'package:note_app/core/widgets/custom_icon.dart';
 
@@ -31,12 +33,11 @@ class NotesScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 20),
-            
           ],
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: () => context.goNamed(AppRouter.noteDetails),
         backgroundColor: AppTheme.primaryColor,
         child: Icon(Icons.add, color: Colors.white, size: 30),
       ),
