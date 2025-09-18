@@ -18,8 +18,17 @@ class NoteRemoteDataSourceImpl implements NoteRemoteDataSource {
   @override
   Future<Result<void>> createNote(NoteModel note) async {
     try {
-      await client.from("notes").insert(note.toJson());
+      await client
+          .from("notes")
+          .insert(
+            note.toSupabaseJson()
+              ..remove("id")
+              ..remove("created_at")
+              ..remove("user_id"),
+          );
       return Success(null);
+    } on PostgrestException catch (e) {
+      return Failure(failures.ServerFailure(e.message));
     } catch (e) {
       return Failure(failures.ServerFailure(e.toString()));
     }
@@ -28,8 +37,10 @@ class NoteRemoteDataSourceImpl implements NoteRemoteDataSource {
   @override
   Future<Result<void>> deleteNote(String id) async {
     try {
-      await client.from("notes").delete().match({"id": id});
+      await client.from("notes").delete().eq("id", id);
       return Success(null);
+    } on PostgrestException catch (e) {
+      return Failure(failures.ServerFailure(e.message));
     } catch (e) {
       return Failure(failures.ServerFailure(e.toString()));
     }
@@ -38,8 +49,16 @@ class NoteRemoteDataSourceImpl implements NoteRemoteDataSource {
   @override
   Future<Result<List<NoteModel>>> getNotes() async {
     try {
-      final notes = await client.from("notes").select();
-      return Success(notes.map((e) => NoteModel.fromJson(e)).toList());
+      final response = await client
+          .from("notes")
+          .select()
+          .eq("user_id", client.auth.currentUser!.id);
+      final notes = (response as List)
+          .map((e) => NoteModel.fromSupabaseJson(e as Map<String, dynamic>))
+          .toList();
+      return Success(notes);
+    } on PostgrestException catch (e) {
+      return Failure(failures.ServerFailure(e.message));
     } catch (e) {
       return Failure(failures.ServerFailure(e.toString()));
     }
@@ -48,8 +67,13 @@ class NoteRemoteDataSourceImpl implements NoteRemoteDataSource {
   @override
   Future<Result<void>> updateNote(NoteModel note) async {
     try {
-      await client.from("notes").update(note.toJson()).match({"id": note.id});
+      await client
+          .from("notes")
+          .update(note.toSupabaseJson()..remove("created_at"))
+          .eq("id", note.id!);
       return Success(null);
+    } on PostgrestException catch (e) {
+      return Failure(failures.ServerFailure(e.message));
     } catch (e) {
       return Failure(failures.ServerFailure(e.toString()));
     }

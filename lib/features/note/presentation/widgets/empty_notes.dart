@@ -5,19 +5,15 @@ class EmptyNotes extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
+    return const Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Image.asset(
-            "assets/notes/png/empty_notes.png",
-            width: MediaQuery.of(context).size.width * 0.8,
-            height: MediaQuery.of(context).size.width * 0.8,
-          ),
+          Icon(Icons.note_alt_outlined, color: Colors.white, size: 100),
+          SizedBox(height: 20),
           Text(
-            "Create your first note !",
-            style: TextStyle(color: Colors.white60, fontSize: 20),
+            'No notes yet!',
+            style: TextStyle(color: Colors.white, fontSize: 24),
           ),
         ],
       ),

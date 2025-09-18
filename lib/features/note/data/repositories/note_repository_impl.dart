@@ -12,16 +12,20 @@ class NoteRepositoryImpl implements NoteRepository {
   @override
   Future<Result<List<Note>>> getNotes() async {
     final result = await remoteDataSource.getNotes();
-    
+
     return result.when(
       success: (noteModels) {
-        final notes = noteModels.map((model) => Note(
-          id: model.id,
-          title: model.title,
-          content: model.content,
-          description: model.description,
-          createdAt: model.createdAt,
-        )).toList();
+        final notes = noteModels
+            .map(
+              (model) => Note(
+                id: model.id,
+                title: model.title,
+                content: model.content,
+                description: model.description,
+                createdAt: model.createdAt,
+              ),
+            )
+            .toList();
         return Success(notes);
       },
       error: (failure) => Failure(failure),
@@ -31,11 +35,9 @@ class NoteRepositoryImpl implements NoteRepository {
   @override
   Future<Result<void>> createNote(Note note) async {
     final noteModel = NoteModel(
-      id: note.id,
       title: note.title,
       content: note.content,
       description: note.description,
-      createdAt: note.createdAt,
     );
 
     final result = await remoteDataSource.createNote(noteModel);
@@ -52,7 +54,6 @@ class NoteRepositoryImpl implements NoteRepository {
       title: note.title,
       content: note.content,
       description: note.description,
-      createdAt: note.createdAt,
     );
 
     final result = await remoteDataSource.updateNote(noteModel);

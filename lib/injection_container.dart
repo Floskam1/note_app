@@ -14,6 +14,11 @@ import 'package:note_app/features/authentication/presentation/bloc/auth_bloc/aut
 import 'package:note_app/features/note/data/datasource/note_remote_data_source.dart';
 import 'package:note_app/features/note/data/repositories/note_repository_impl.dart';
 import 'package:note_app/features/note/domain/repositories/note_repository.dart';
+import 'package:note_app/features/note/domain/usecases/create_note_usecase.dart';
+import 'package:note_app/features/note/domain/usecases/delete_note_usecase.dart';
+import 'package:note_app/features/note/domain/usecases/get_notes_usecase.dart';
+import 'package:note_app/features/note/domain/usecases/update_note_usecase.dart';
+import 'package:note_app/features/note/presentation/bloc/note_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
 
 final sl = GetIt.instance;
@@ -21,18 +26,16 @@ final sl = GetIt.instance;
 Future<void> initial() async {
   // Initialize Supabase first
   await Supabase().initialSupabase();
-  
+
   // Register Supabase client as lazy singleton
   sl.registerLazySingleton(() => supabase.Supabase.instance.client);
-  
+
   // Register data source
   sl.registerLazySingleton<AuthRemoteDataSource>(
     () => AuthRemoteDataSourceImpl(sl()),
   );
 
-  sl.registerLazySingleton<AuthRepository>(
-    () => AuthRepositoryImpl(sl()),
-  );
+  sl.registerLazySingleton<AuthRepository>(() => AuthRepositoryImpl(sl()));
 
   // Auth Use Cases
   sl.registerLazySingleton(() => GetUserIdUseCase(sl()));
@@ -60,9 +63,25 @@ Future<void> initial() async {
   sl.registerLazySingleton<NoteRemoteDataSource>(
     () => NoteRemoteDataSourceImpl(client: sl()),
   );
-  
+
   // Register repository
   sl.registerLazySingleton<NoteRepository>(
     () => NoteRepositoryImpl(remoteDataSource: sl()),
+  );
+
+  // Note Use Cases
+  sl.registerLazySingleton(() => GetNotesUsecase(sl()));
+  sl.registerLazySingleton(() => CreateNoteUsecase(sl(), sl()));
+  sl.registerLazySingleton(() => UpdateNoteUsecase(sl()));
+  sl.registerLazySingleton(() => DeleteNoteUsecase(sl()));
+
+  // Note Bloc
+  sl.registerFactory(
+    () => NoteBloc(
+      getNotesUsecase: sl(),
+      createNoteUsecase: sl(),
+      updateNoteUsecase: sl(),
+      deleteNoteUsecase: sl(),
+    ),
   );
 }

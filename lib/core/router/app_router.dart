@@ -4,6 +4,7 @@ import 'package:note_app/core/middlewares/auth_middleware.dart';
 import 'package:note_app/features/authentication/presentation/screens/forgot_password_screen.dart';
 import 'package:note_app/features/authentication/presentation/screens/sign_in_screen.dart';
 import 'package:note_app/features/authentication/presentation/screens/sign_up_screen.dart';
+import 'package:note_app/features/note/domain/entities/note_entity.dart';
 import 'package:note_app/features/note/presentation/screens/note_details_screen.dart';
 import 'package:note_app/features/note/presentation/screens/notes_screen.dart';
 
@@ -30,7 +31,10 @@ class AppRouter {
           GoRoute(
             name: noteDetails,
             path: "/note-details",
-            builder: (context, state) => const NoteDetailsScreen(),
+            builder: (context, state) {
+              final note = state.extra as Note?;
+              return NoteDetailsScreen(note: note);
+            },
           ),
         ],
         builder: (context, state) => const NotesScreen(),

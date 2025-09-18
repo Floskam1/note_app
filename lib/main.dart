@@ -5,6 +5,8 @@ import 'package:note_app/core/theme/theme_data.dart';
 import 'package:note_app/features/authentication/presentation/bloc/auth_bloc/auth_bloc.dart';
 import 'package:note_app/injection_container.dart' as di;
 import 'package:note_app/injection_container.dart';
+import 'package:flutter_quill/flutter_quill.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,6 +25,12 @@ class MyApp extends StatelessWidget {
         title: "Note App",
         debugShowCheckedModeBanner: false,
         theme: themeData,
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+          FlutterQuillLocalizations.delegate,
+        ],
         routerConfig: AppRouter().routerConfig,
       ),
     );

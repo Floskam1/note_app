@@ -2,26 +2,24 @@ import 'package:note_app/features/note/domain/entities/note_entity.dart';
 
 class NoteModel extends Note {
   const NoteModel({
-    required super.id,
+    super.id,
     required super.title,
     required super.content,
     required super.description,
-    required super.createdAt,
+    super.createdAt,
   });
 
-  factory NoteModel.fromJson(Map<String, dynamic> json) => NoteModel(
+  factory NoteModel.fromSupabaseJson(Map<String, dynamic> json) => NoteModel(
     id: json["id"],
     title: json["title"],
     content: json["content"],
     description: json["description"],
-    createdAt: json["created_at"],
+    createdAt: DateTime.parse(json["created_at"] as String),
   );
 
-  Map<String, dynamic> toJson() => {
-    "id": id,
+  Map<String, dynamic> toSupabaseJson() => {
     "title": title,
     "content": content,
     "description": description,
-    "created_at": createdAt,
   };
 }
