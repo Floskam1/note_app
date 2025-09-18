@@ -9,9 +9,12 @@ import 'package:note_app/core/utils/show_custom_dialog.dart';
 import 'package:note_app/core/widgets/custom_icon.dart';
 import 'package:note_app/features/note/domain/entities/note_entity.dart';
 import 'package:note_app/features/note/presentation/bloc/note_bloc.dart';
-import 'package:note_app/features/note/presentation/bloc/note_event.dart';
-import 'package:note_app/features/note/presentation/bloc/note_state.dart';
+import 'package:note_app/features/note/presentation/bloc/note_details_bloc/note_details_bloc.dart';
+import 'package:note_app/features/note/presentation/bloc/note_details_bloc/note_details_event.dart';
+import 'package:note_app/features/note/presentation/bloc/note_details_bloc/note_details_state.dart';
 import 'package:flutter/material.dart';
+import 'package:note_app/features/note/presentation/bloc/note_event.dart'; // This import is necessary for GetNotesEvent
+import 'package:note_app/injection_container.dart';
 
 class NoteDetailsScreen extends StatefulWidget {
   final Note? note;
@@ -22,180 +25,201 @@ class NoteDetailsScreen extends StatefulWidget {
 }
 
 class _NoteDetailsScreenState extends State<NoteDetailsScreen> {
-  bool _isVisible = true;
   final QuillController _controller = QuillController.basic();
-  final TextEditingController _titleController = TextEditingController();
-  final TextEditingController _descriptionController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   final ScrollController _scrollController = ScrollController();
+  late final TextEditingController _titleController;
+  late final TextEditingController _descriptionController;
+  bool _isContentListenerAdded = false;
 
   @override
   void initState() {
     super.initState();
+    _titleController = TextEditingController();
+    _descriptionController = TextEditingController();
     if (widget.note != null) {
       _titleController.text = widget.note!.title;
       _descriptionController.text = widget.note!.description;
       _controller.document = Note.toQuillDocument(widget.note!.content);
     }
+    // _controller.addListener(_onContentChanged);
   }
 
   @override
   void dispose() {
-    super.dispose();
+    _controller.removeListener(() => _onContentChanged(context));
     _controller.dispose();
     _focusNode.dispose();
     _scrollController.dispose();
     _titleController.dispose();
     _descriptionController.dispose();
+    super.dispose();
   }
 
-  void _saveNote() {
-    if (_titleController.text.isEmpty ||
-        _descriptionController.text.isEmpty ||
-        _controller.document.isEmpty()) {
-      // Show error message
-      return;
-    }
-
-    if (widget.note == null) {
-      // Create new note
-      context.read<NoteBloc>().add(
-        CreateNoteEvent(
-          title: _titleController.text,
-          content: Note.fromQuillDocument(_controller.document),
-          description: _descriptionController.text,
-        ),
-      );
-    } else {
-      // Update existing note
-      final updatedNote = Note(
-        id: widget.note!.id,
-        title: _titleController.text,
-        content: Note.fromQuillDocument(_controller.document),
-        description: _descriptionController.text,
-      );
-      context.read<NoteBloc>().add(UpdateNoteEvent(updatedNote));
-    }
+  void _onContentChanged(BuildContext context) {
+    final content = Note.fromQuillDocument(_controller.document);
+    context.read<NoteDetailsBloc>().add(NoteDetailsContentChanged(content));
   }
 
   @override
   Widget build(BuildContext context) {
-    _controller.readOnly = !_isVisible;
-    return BlocConsumer<NoteBloc, NoteState>(
-      listener: (context, state) {
-        if (state is NoteOperationSuccess) {
-          context.pop();
-          context.read<NoteBloc>().add(GetNotesEvent());
-        } else if (state is NoteError) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(state.message)));
-        }
-      },
-      builder: (context, state) {
-        return Scaffold(
-          backgroundColor: AppTheme.primaryColor,
-          body: Column(
-            children: [
-              Expanded(
-                child: Container(
-                  margin: const EdgeInsets.only(top: 50, left: 20, right: 20),
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          CustomIcon(
-                            icon: Icons.arrow_back_ios_new_rounded,
-                            onTap: () {
-                              if (_controller.document.isEmpty() &&
-                                  _titleController.text.isEmpty &&
-                                  _descriptionController.text.isEmpty) {
-                                context.pop();
-                              } else {
-                                showCustomDialog(
-                                  context: context,
-                                  confirmText: 'Discard',
-                                  cancelText: 'Keep',
-                                  contentText:
-                                      'Are you sure you want to discard your changes?',
-                                  onConfirm: () => context.pop(),
+    return BlocProvider<NoteDetailsBloc>(
+      create: (context) =>
+          NoteDetailsBloc(
+            createNoteUsecase: sl(),
+            updateNoteUsecase: sl(),
+            initialNote: widget.note,
+          )..add(
+            NoteDetailsLoadEvent(initialNote: widget.note),
+          ), // Dispatch event here
+      child: BlocConsumer<NoteDetailsBloc, NoteDetailsState>(
+        listener: (context, state) {
+          if (state.errorMessage != null && state.errorMessage!.isNotEmpty) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
+          } else if (state.discardConfirmationNeeded) {
+            showCustomDialog(
+              context: context,
+              confirmText: 'Discard',
+              cancelText: 'Keep',
+              contentText: 'Are you sure you want to discard your changes?',
+              onConfirm: () {
+                context.read<NoteDetailsBloc>().add(
+                  const NoteDetailsConfirmDiscardEvent(),
+                );
+                context.pop();
+              },
+            );
+          } else if (state.operationCompleted) {
+            context.pop();
+            context.read<NoteBloc>().add(GetNotesEvent());
+          }
+        },
+        builder: (context, state) {
+          if (!_isContentListenerAdded) {
+            _controller.addListener(() {
+              _onContentChanged(context);
+            });
+            _isContentListenerAdded = true;
+          }
+          if (_titleController.text != state.title) {
+            _titleController.text = state.title;
+            _titleController.selection = TextSelection.collapsed(
+              offset: state.title.length,
+            );
+          }
+          if (_descriptionController.text != state.description) {
+            _descriptionController.text = state.description;
+            _descriptionController.selection = TextSelection.collapsed(
+              offset: state.description.length,
+            );
+          }
+          _controller.readOnly = !state.isVisible;
+
+          return Scaffold(
+            backgroundColor: AppTheme.primaryColor,
+            body: Column(
+              children: [
+                Expanded(
+                  child: Container(
+                    margin: const EdgeInsets.only(top: 50, left: 20, right: 20),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            CustomIcon(
+                              icon: Icons.arrow_back_ios_new_rounded,
+                              onTap: () {
+                                context.read<NoteDetailsBloc>().add(
+                                  const NoteDetailsDiscardRequested(),
                                 );
-                              }
-                            },
-                          ),
-                          Row(
-                            children: [
-                              CustomIcon(
-                                icon: Icons.remove_red_eye_outlined,
-                                onTap: () {
-                                  setState(() {
-                                    _isVisible = !_isVisible;
-                                  });
-                                },
-                              ),
-                              const SizedBox(width: 10),
-                              CustomIcon(
-                                icon: Icons.save_outlined,
-                                onTap: _saveNote,
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      TextField(
-                        controller: _titleController,
-                        maxLines: null,
-                        enabled: _isVisible,
-                        style: TextStyle(color: Colors.white, fontSize: 35),
-                        decoration: InputDecoration(
-                          hintText: 'Title',
-                          hintStyle: TextStyle(color: AppTheme.hintTextColor),
-                          border: InputBorder.none,
+                              },
+                            ),
+                            Row(
+                              children: [
+                                CustomIcon(
+                                  icon: Icons.remove_red_eye_outlined,
+                                  onTap: () {
+                                    context.read<NoteDetailsBloc>().add(
+                                      const NoteDetailsToggleVisibility(),
+                                    );
+                                  },
+                                ),
+                                const SizedBox(width: 10),
+                                CustomIcon(
+                                  icon: Icons.save_outlined,
+                                  onTap: () {
+                                    context.read<NoteDetailsBloc>().add(
+                                      const NoteDetailsSaveRequested(),
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: _descriptionController,
-                        maxLines: null,
-                        enabled: _isVisible,
-                        style: TextStyle(color: Colors.white, fontSize: 20),
-                        decoration: InputDecoration(
-                          hintText: 'Description',
-                          hintStyle: TextStyle(color: AppTheme.hintTextColor),
-                          border: InputBorder.none,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Expanded(
-                        child: QuillEditor(
-                          focusNode: _focusNode,
-                          scrollController: _scrollController,
-                          controller: _controller,
-                          config: QuillEditorConfig(
-                            customStyles: customStyles,
-                            placeholder: 'Type something...',
+                        const SizedBox(height: 20),
+                        TextField(
+                          controller: _titleController,
+                          onChanged: (value) => context
+                              .read<NoteDetailsBloc>()
+                              .add(NoteDetailsTitleChanged(value)),
+                          maxLines: null,
+                          enabled: state.isVisible,
+                          style: TextStyle(color: Colors.white, fontSize: 35),
+                          decoration: InputDecoration(
+                            hintText: 'Title',
+                            hintStyle: TextStyle(color: AppTheme.hintTextColor),
+                            border: InputBorder.none,
                           ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 16),
+                        TextField(
+                          controller: _descriptionController,
+                          onChanged: (value) => context
+                              .read<NoteDetailsBloc>()
+                              .add(NoteDetailsDescriptionChanged(value)),
+                          maxLines: null,
+                          enabled: state.isVisible,
+                          style: TextStyle(color: Colors.white, fontSize: 23),
+                          decoration: InputDecoration(
+                            hintText: 'Description',
+                            hintStyle: TextStyle(color: AppTheme.hintTextColor),
+                            border: InputBorder.none,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Expanded(
+                          child: QuillEditor(
+                            focusNode: _focusNode,
+                            scrollController: _scrollController,
+                            controller: _controller,
+                            config: QuillEditorConfig(
+                              customStyles: customStyles,
+                              placeholder: 'Type something...',
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              Offstage(
-                offstage: !_isVisible,
-                child: Container(
-                  padding: const EdgeInsets.all(10),
-                  height: 60,
-                  width: double.infinity,
-                  child: quillSimpleToolbarConfig(_controller),
+                Offstage(
+                  offstage: !state.isVisible,
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    height: 60,
+                    width: double.infinity,
+                    child: quillSimpleToolbarConfig(_controller),
+                  ),
                 ),
-              ),
-            ],
-          ),
-        );
-      },
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 

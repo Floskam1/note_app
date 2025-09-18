@@ -19,11 +19,24 @@ class Note extends Equatable {
   });
 
   static String fromQuillDocument(Document document) {
+    final plainText = document.toPlainText();
+    if (plainText.trim().isEmpty) {
+      return '';
+    }
     return jsonEncode(document.toDelta().toJson());
   }
 
   static Document toQuillDocument(String jsonString) {
-    return Document.fromJson(jsonDecode(jsonString));
+    if (jsonString.isEmpty) {
+      return Document();
+    }
+    try {
+      return Document.fromJson(jsonDecode(jsonString));
+    } on FormatException {
+      return Document();
+    } catch (e) {
+      return Document();
+    }
   }
 
   @override

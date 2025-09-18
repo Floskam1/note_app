@@ -19,6 +19,7 @@ import 'package:note_app/features/note/domain/usecases/delete_note_usecase.dart'
 import 'package:note_app/features/note/domain/usecases/get_notes_usecase.dart';
 import 'package:note_app/features/note/domain/usecases/update_note_usecase.dart';
 import 'package:note_app/features/note/presentation/bloc/note_bloc.dart';
+import 'package:note_app/features/note/presentation/bloc/note_details_bloc/note_details_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
 
 final sl = GetIt.instance;
@@ -83,5 +84,10 @@ Future<void> initial() async {
       updateNoteUsecase: sl(),
       deleteNoteUsecase: sl(),
     ),
+  );
+
+  // Note Details Bloc
+  sl.registerFactory(
+    () => NoteDetailsBloc(createNoteUsecase: sl(), updateNoteUsecase: sl()),
   );
 }

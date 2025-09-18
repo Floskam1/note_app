@@ -18,18 +18,20 @@ class NoteRemoteDataSourceImpl implements NoteRemoteDataSource {
   @override
   Future<Result<void>> createNote(NoteModel note) async {
     try {
-      await client
-          .from("notes")
-          .insert(
-            note.toSupabaseJson()
-              ..remove("id")
-              ..remove("created_at")
-              ..remove("user_id"),
-          );
+      final jsonToInsert = note.toSupabaseJson()
+        ..remove("id")
+        ..remove("created_at")
+        ..remove("user_id");
+      print('DEBUG: JSON to insert: $jsonToInsert');
+      await client.from("notes").insert(jsonToInsert);
+      print('DEBUG: Supabase insert successful');
       return Success(null);
     } on PostgrestException catch (e) {
+      print('DEBUG: Supabase PostgrestException: ${e.message}');
       return Failure(failures.ServerFailure(e.message));
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('DEBUG: Supabase general exception: ${e.toString()}');
+      print('DEBUG: Stack trace: $stackTrace');
       return Failure(failures.ServerFailure(e.toString()));
     }
   }

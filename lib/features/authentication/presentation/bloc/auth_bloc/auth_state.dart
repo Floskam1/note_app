@@ -15,7 +15,7 @@ class AuthForgotPasswordLoading extends AuthState {}
 class AuthSignInWithGoogleLoading extends AuthState {}
 
 class AuthAuthenticated extends AuthState {
-  final String userId; // Or a User object
+  final String userId;
 
   const AuthAuthenticated(this.userId);
 

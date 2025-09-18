@@ -43,7 +43,7 @@ class NoteWidget extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.white),
+                  icon: const Icon(Icons.delete, color: Colors.red),
                   onPressed: onDelete,
                 ),
               ],
@@ -52,7 +52,7 @@ class NoteWidget extends StatelessWidget {
             Text(
               note.description,
               style: const TextStyle(color: Colors.white70, fontSize: 16),
-              maxLines: 2,
+              maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
             if (note.createdAt != null)

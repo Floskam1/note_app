@@ -11,7 +11,7 @@ class SnackBarUtils {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: Colors.red, // Or any error specific color
+        backgroundColor: Colors.red,
       ),
     );
   }

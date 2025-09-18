@@ -31,3 +31,7 @@ class NoteError extends NoteState {
   @override
   List<Object> get props => [message];
 }
+
+class NoteDetailsDiscardNeeded extends NoteState {
+  const NoteDetailsDiscardNeeded();
+}
