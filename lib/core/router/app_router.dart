@@ -31,6 +31,23 @@ class AppRouter {
           GoRoute(
             name: noteDetails,
             path: "/note-details",
+            pageBuilder: (context, state) {
+              final note = state.extra as Note?;
+              return CustomTransitionPage(
+                child: NoteDetailsScreen(note: note),
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) =>
+                        SlideTransition(
+                          position: animation.drive(
+                            Tween(
+                              begin: const Offset(0.5, 0),
+                              end: Offset.zero,
+                            ).chain(CurveTween(curve: Curves.fastOutSlowIn)),
+                          ),
+                          child: child,
+                        ),
+              );
+            },
             builder: (context, state) {
               final note = state.extra as Note?;
               return NoteDetailsScreen(note: note);
@@ -43,25 +60,18 @@ class AppRouter {
         name: signUp,
         path: "/sign-up",
         pageBuilder: (context, state) =>
-            _signInTransitionBuilder(context, state, const SignUpScreen()),
+            _transitionBuilder(context, state, const SignUpScreen()),
       ),
       GoRoute(
         name: forgotPassword,
         path: "/forgot-password",
-        pageBuilder: (context, state) => _signInTransitionBuilder(
-          context,
-          state,
-          const ForgotPasswordScreen(),
-        ),
+        pageBuilder: (context, state) =>
+            _transitionBuilder(context, state, const ForgotPasswordScreen()),
       ),
     ],
   );
 
-  CustomTransitionPage _signInTransitionBuilder(
-    BuildContext context,
-    state,
-    child,
-  ) {
+  CustomTransitionPage _transitionBuilder(BuildContext context, state, child) {
     return CustomTransitionPage<void>(
       key: state.pageKey,
       child: child,

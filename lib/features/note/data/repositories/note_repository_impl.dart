@@ -71,4 +71,26 @@ class NoteRepositoryImpl implements NoteRepository {
       error: (failure) => Failure(failure),
     );
   }
+
+  @override
+  Future<Result<List<Note>>> searchNotes(String query) async {
+    final result = await remoteDataSource.searchNotes(query);
+    return result.when(
+      success: (noteModels) {
+        final notes = noteModels
+            .map(
+              (model) => Note(
+                id: model.id,
+                title: model.title,
+                content: model.content,
+                description: model.description,
+                createdAt: model.createdAt,
+              ),
+            )
+            .toList();
+        return Success(notes);
+      },
+      error: (failure) => Failure(failure),
+    );
+  }
 }

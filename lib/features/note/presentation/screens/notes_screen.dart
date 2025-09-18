@@ -9,6 +9,7 @@ import 'package:note_app/features/note/presentation/bloc/note_event.dart';
 import 'package:note_app/features/note/presentation/bloc/note_state.dart';
 import 'package:note_app/features/note/presentation/widgets/empty_notes.dart';
 import 'package:note_app/features/note/presentation/widgets/note_widget.dart';
+import 'package:note_app/features/note/presentation/widgets/note_search_delegate.dart';
 
 class NotesScreen extends StatefulWidget {
   const NotesScreen({super.key});
@@ -42,7 +43,17 @@ class _NotesScreenState extends State<NotesScreen> {
                 ),
                 Row(
                   children: [
-                    CustomIcon(icon: Icons.search_rounded, onTap: () {}),
+                    CustomIcon(
+                      icon: Icons.search_rounded,
+                      onTap: () {
+                        showSearch(
+                          context: context,
+                          delegate: NoteSearchDelegate(
+                            context.read<NoteBloc>(),
+                          ),
+                        );
+                      },
+                    ),
                     const SizedBox(width: 10),
                     CustomIcon(
                       icon: Icons.info_outline_rounded,

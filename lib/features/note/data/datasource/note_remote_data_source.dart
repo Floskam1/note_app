@@ -8,6 +8,7 @@ abstract class NoteRemoteDataSource {
   Future<Result<void>> createNote(NoteModel note);
   Future<Result<void>> updateNote(NoteModel note);
   Future<Result<void>> deleteNote(String id);
+  Future<Result<List<NoteModel>>> searchNotes(String query);
 }
 
 class NoteRemoteDataSourceImpl implements NoteRemoteDataSource {
@@ -22,16 +23,11 @@ class NoteRemoteDataSourceImpl implements NoteRemoteDataSource {
         ..remove("id")
         ..remove("created_at")
         ..remove("user_id");
-      print('DEBUG: JSON to insert: $jsonToInsert');
       await client.from("notes").insert(jsonToInsert);
-      print('DEBUG: Supabase insert successful');
       return Success(null);
     } on PostgrestException catch (e) {
-      print('DEBUG: Supabase PostgrestException: ${e.message}');
       return Failure(failures.ServerFailure(e.message));
-    } catch (e, stackTrace) {
-      print('DEBUG: Supabase general exception: ${e.toString()}');
-      print('DEBUG: Stack trace: $stackTrace');
+    } catch (e) {
       return Failure(failures.ServerFailure(e.toString()));
     }
   }
@@ -74,6 +70,25 @@ class NoteRemoteDataSourceImpl implements NoteRemoteDataSource {
           .update(note.toSupabaseJson()..remove("created_at"))
           .eq("id", note.id!);
       return Success(null);
+    } on PostgrestException catch (e) {
+      return Failure(failures.ServerFailure(e.message));
+    } catch (e) {
+      return Failure(failures.ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Result<List<NoteModel>>> searchNotes(String query) async {
+    try {
+      final response = await client
+          .from("notes")
+          .select()
+          .eq("user_id", client.auth.currentUser!.id)
+          .ilike("title", '%$query%'); // Case-insensitive search on title
+      final notes = (response as List)
+          .map((e) => NoteModel.fromSupabaseJson(e as Map<String, dynamic>))
+          .toList();
+      return Success(notes);
     } on PostgrestException catch (e) {
       return Failure(failures.ServerFailure(e.message));
     } catch (e) {

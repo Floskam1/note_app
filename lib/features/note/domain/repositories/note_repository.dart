@@ -6,4 +6,5 @@ abstract class NoteRepository {
   Future<Result<void>> createNote(Note note);
   Future<Result<void>> updateNote(Note note);
   Future<Result<void>> deleteNote(String id);
+  Future<Result<List<Note>>> searchNotes(String query);
 }

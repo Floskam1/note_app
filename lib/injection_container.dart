@@ -17,6 +17,7 @@ import 'package:note_app/features/note/domain/repositories/note_repository.dart'
 import 'package:note_app/features/note/domain/usecases/create_note_usecase.dart';
 import 'package:note_app/features/note/domain/usecases/delete_note_usecase.dart';
 import 'package:note_app/features/note/domain/usecases/get_notes_usecase.dart';
+import 'package:note_app/features/note/domain/usecases/search_notes.dart';
 import 'package:note_app/features/note/domain/usecases/update_note_usecase.dart';
 import 'package:note_app/features/note/presentation/bloc/note_bloc.dart';
 import 'package:note_app/features/note/presentation/bloc/note_details_bloc/note_details_bloc.dart';
@@ -75,6 +76,7 @@ Future<void> initial() async {
   sl.registerLazySingleton(() => CreateNoteUsecase(sl(), sl()));
   sl.registerLazySingleton(() => UpdateNoteUsecase(sl()));
   sl.registerLazySingleton(() => DeleteNoteUsecase(sl()));
+  sl.registerLazySingleton(() => SearchNotes(repository: sl()));
 
   // Note Bloc
   sl.registerFactory(
@@ -83,6 +85,7 @@ Future<void> initial() async {
       createNoteUsecase: sl(),
       updateNoteUsecase: sl(),
       deleteNoteUsecase: sl(),
+      searchNotes: sl(),
     ),
   );
 
