@@ -15,6 +15,8 @@ class NoteBloc extends Bloc<NoteEvent, NoteState> {
   final DeleteNoteUsecase deleteNoteUsecase;
   final SearchNotes searchNotes;
 
+  List<Note> _cachedNotes = [];
+
   NoteBloc({
     required this.getNotesUsecase,
     required this.createNoteUsecase,
@@ -32,6 +34,22 @@ class NoteBloc extends Bloc<NoteEvent, NoteState> {
   void _onGetNotes(GetNotesEvent event, Emitter<NoteState> emit) async {
     emit(NoteLoading());
     final result = await getNotesUsecase.call();
+    result.when(
+      success: (notes) {
+        _cachedNotes = List.from(notes); // Store a copy for caching
+        emit(NotesLoaded(notes));
+      },
+      error: (failure) => emit(NoteError(failure.message)),
+    );
+  }
+
+  void _onSearchNotes(SearchNotesEvent event, Emitter<NoteState> emit) async {
+    emit(NoteLoading());
+    if (event.query.isEmpty) {
+      emit(NotesLoaded(_cachedNotes));
+      return;
+    }
+    final result = await searchNotes.call(event.query);
     result.when(
       success: (notes) => emit(NotesLoaded(notes)),
       error: (failure) => emit(NoteError(failure.message)),
@@ -117,14 +135,5 @@ class NoteBloc extends Bloc<NoteEvent, NoteState> {
     } catch (e) {
       if (!emit.isDone) emit(NoteError(e.toString()));
     }
-  }
-
-  void _onSearchNotes(SearchNotesEvent event, Emitter<NoteState> emit) async {
-    emit(NoteLoading());
-    final result = await searchNotes.call(event.query);
-    result.when(
-      success: (notes) => emit(NotesLoaded(notes)),
-      error: (failure) => emit(NoteError(failure.message)),
-    );
   }
 }

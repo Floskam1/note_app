@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:note_app/core/router/app_router.dart';
 import 'package:note_app/core/theme/app_theme.dart';
@@ -53,77 +52,115 @@ class NoteSearchDelegate extends SearchDelegate<Note?> {
 
   @override
   Widget buildResults(BuildContext context) {
-    noteBloc.add(SearchNotesEvent(query));
+    final cachedNotes = (noteBloc.state is NotesLoaded)
+        ? (noteBloc.state as NotesLoaded).notes
+        : <Note>[];
+    final filteredNotes = query.isEmpty
+        ? cachedNotes
+        : cachedNotes
+              .where(
+                (note) =>
+                    note.title.toLowerCase().contains(query.toLowerCase()) ||
+                    (note.description.toLowerCase().contains(
+                      query.toLowerCase(),
+                    )),
+              )
+              .toList();
+
     return Container(
       color: AppTheme.primaryColor,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: BlocBuilder<NoteBloc, NoteState>(
-          bloc: noteBloc,
-          builder: (context, state) {
-            if (state is NoteLoading) {
-              return const Center(
-                child: CircularProgressIndicator(color: Colors.white),
-              );
-            } else if (state is NotesLoaded) {
-              if (state.notes.isEmpty) {
-                return Center(
-                  child: Text(
-                    'No notes found for "$query"',
-                    style: TextStyle(color: Colors.white, fontSize: 18),
-                  ),
-                );
-              } else {
-                return GridView.builder(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
-                    childAspectRatio: 1,
-                  ),
-                  itemCount: state.notes.length,
-                  itemBuilder: (context, index) {
-                    final note = state.notes[index];
-                    return NoteWidget(
-                      note: note,
-                      onTap: () {
-                        context.pushNamed(AppRouter.noteDetails, extra: note);
-                      },
-                      onDelete: () {
-                        noteBloc.add(DeleteNoteEvent(note.id!));
-                      },
-                    );
-                  },
-                );
-              }
-            } else if (state is NoteError) {
-              return Center(
-                child: Text(
-                  state.message,
-                  style: const TextStyle(color: Colors.red, fontSize: 18),
-                ),
-              );
-            }
-            return const SizedBox();
-          },
-        ),
+        child: _buildNotesList(context, filteredNotes),
       ),
     );
   }
 
   @override
   Widget buildSuggestions(BuildContext context) {
-    return Container(
-      color: AppTheme.backgroundColor,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Center(
-          child: Text(
-            'Search for notes by title',
-            style: TextStyle(color: Colors.white54, fontSize: 18),
+    final cachedNotes = (noteBloc.state is NotesLoaded)
+        ? (noteBloc.state as NotesLoaded).notes
+        : <Note>[];
+
+    final filteredNotes = query.isEmpty
+        ? <Note>[]
+        : cachedNotes
+              .where(
+                (note) =>
+                    note.title.toLowerCase().contains(query.toLowerCase()) ||
+                    (note.description.toLowerCase().contains(
+                      query.toLowerCase(),
+                    )),
+              )
+              .toList();
+
+    if (query.isEmpty) {
+      return Container(
+        color: AppTheme.backgroundColor,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Center(
+            child: Text(
+              'Search for notes by title',
+              style: TextStyle(color: Colors.white54, fontSize: 18),
+            ),
           ),
         ),
+      );
+    }
+
+    return Container(
+      color: AppTheme.primaryColor,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: _buildNotesList(context, filteredNotes),
       ),
     );
+  }
+
+  Widget _buildNotesList(BuildContext context, List<Note> notes) {
+    if (notes.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Image.asset(
+              "assets/notes/png/no_notes_found.png",
+              width: MediaQuery.of(context).size.width * .8,
+            ),
+            Text(
+              textAlign: TextAlign.center,
+              query.isEmpty
+                  ? 'No notes available.'
+                  : 'No notes found for "$query".',
+              style: TextStyle(color: Colors.white, fontSize: 18),
+            ),
+          ],
+        ),
+      );
+    } else {
+      return GridView.builder(
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+          childAspectRatio: 1,
+        ),
+        itemCount: notes.length,
+        itemBuilder: (context, index) {
+          final note = notes[index];
+          return NoteWidget(
+            note: note,
+            onTap: () {
+              context.pushNamed(AppRouter.noteDetails, extra: note);
+            },
+            onDelete: () {
+              noteBloc.add(DeleteNoteEvent(note.id!));
+            },
+          );
+        },
+      );
+    }
   }
 }

@@ -92,7 +92,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     AuthLogoutRequested event,
     Emitter<AuthState> emit,
   ) async {
-    emit(AuthLoginLoading()); // Using AuthLoginLoading as a generic loading for logout as well
+    emit(AuthLoginLoading());
     final result = await _signOutUseCase();
     result.when(
       success: (_) => emit(AuthUnauthenticated()),

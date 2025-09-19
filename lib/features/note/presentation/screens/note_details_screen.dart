@@ -42,7 +42,6 @@ class _NoteDetailsScreenState extends State<NoteDetailsScreen> {
       _descriptionController.text = widget.note!.description;
       _controller.document = Note.toQuillDocument(widget.note!.content);
     }
-    // _controller.addListener(_onContentChanged);
   }
 
   @override
@@ -64,14 +63,11 @@ class _NoteDetailsScreenState extends State<NoteDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider<NoteDetailsBloc>(
-      create: (context) =>
-          NoteDetailsBloc(
-            createNoteUsecase: sl(),
-            updateNoteUsecase: sl(),
-            initialNote: widget.note,
-          )..add(
-            NoteDetailsLoadEvent(initialNote: widget.note),
-          ), // Dispatch event here
+      create: (context) => NoteDetailsBloc(
+        createNoteUsecase: sl(),
+        updateNoteUsecase: sl(),
+        initialNote: widget.note,
+      )..add(NoteDetailsLoadEvent(initialNote: widget.note)),
       child: BlocConsumer<NoteDetailsBloc, NoteDetailsState>(
         listener: (context, state) {
           if (state.errorMessage != null && state.errorMessage!.isNotEmpty) {
@@ -140,7 +136,9 @@ class _NoteDetailsScreenState extends State<NoteDetailsScreen> {
                             Row(
                               children: [
                                 CustomIcon(
-                                  icon: Icons.remove_red_eye_outlined,
+                                  icon: state.isVisible
+                                      ? Icons.visibility_outlined
+                                      : Icons.visibility_off_outlined,
                                   onTap: () {
                                     context.read<NoteDetailsBloc>().add(
                                       const NoteDetailsToggleVisibility(),
